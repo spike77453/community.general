@@ -1,0 +1,25 @@
+config:
+    concurrent: 2
+    check_interval: 2
+    session_server:
+      session_timeout: 1800
+    runners:
+      - name: "runner1"
+        token: "supersecrettoken"
+      - name: "runner2"
+        token: "notsosecrettoken"
+valid_toml: |
+  concurrent = 2
+  check_interval = 2
+  [session_server]
+  session_timeout = 1800
+
+  [[runners]]
+  name = "runner1"
+  token = "supersecrettoken"
+
+  [[runners]]
+  name = "runner2"
+  token = "notsosecrettoken"
+
+not_valid_toml: "this is not valid TOML"

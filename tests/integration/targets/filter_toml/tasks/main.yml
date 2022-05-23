@@ -1,0 +1,40 @@
+####################################################################
+# WARNING: These are designed specifically for Ansible tests       #
+# and should not be used as examples of how to write Ansible roles #
+####################################################################
+
+- name: Test that to_toml followed by from_toml does not alter variable
+  assert:
+    that:
+      - "config | community.general.to_toml | community.general.from_toml == config"
+
+- name: Register result of valid input to to_toml
+  set_fact:
+    valid_toml_as_intput_to_from_toml: "{{ valid_toml | community.general.from_toml }}"
+
+- name: Test that variable is set correctly when converted with from_toml
+  assert:
+    that:
+      - "valid_toml_as_intput_to_from_toml['runners'][1]['token'] == 'notsosecrettoken'"
+
+- name: Register result of invalid input to to_toml
+  debug:
+    var: "1 | community.general.to_toml"
+  register: int_as_intput_to_to_toml
+  ignore_errors: true
+
+- name: Test that invalid input to to_toml fails
+  assert:
+    that:
+      - int_as_intput_to_to_toml is failed
+
+- name: Register result of invalid input to from_toml
+  debug:
+    var: "not_valid_toml | community.general.to_toml"
+  register: invalid_toml_as_intput_to_from_toml
+  ignore_errors: true
+
+- name: Test that invalid input to from_toml fails
+  assert:
+    that:
+      - invalid_toml_as_intput_to_from_toml is failed

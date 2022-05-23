@@ -1,0 +1,6 @@
+---
+add plugin.filter:
+  - name: from_toml
+    description: Converts a string containing TOML-formatted data into a dictionary containing the parsed data
+  - name: to_toml
+    description: Converts a dictionary into a string containing the corresponding TOML-formatted data

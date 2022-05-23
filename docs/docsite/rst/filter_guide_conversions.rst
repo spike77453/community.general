@@ -106,3 +106,147 @@ This produces:
     }
 
 .. versionadded: 2.0.0
+
+TOML
+^^^^
+
+`TOML <https://github.com/toml-lang/toml>`_ is a file format for configuration files. With the help of the `toml Python library <https://pypi.org/project/toml/>`_ conversion of a dictionary to TOML or conversion of a TOML-formatted string to a dictionary is available as a filter in community.general.
+
+These filters need the `toml Python library <https://pypi.org/project/toml/>`_ installed on the controller.
+
+Converting to TOML
+""""""""""""""""""
+
+You can create a TOML-formatted string from any variable with the ``to_toml`` filter:
+
+.. code-block:: yaml+jinja
+
+    - name: Convert variable into toml file and write to file
+      ansible.builtin.copy:
+        content: "{{ gitlab_runner_config | community.general.to_toml }}"
+        dest: /etc/gitlab-runner/config.toml
+      vars:
+        - gitlab_runner_config:
+            concurrent: 2
+            check_interval: 2
+            session_server:
+            session_timeout: 1800
+            runners:
+            - name: "gitlab-runner.example.com"
+                url: "https://gitlab.example.com"
+                token: supersecrettoken
+                executor: docker
+                docker:
+                tls_verify: true
+                image: "fedora:latest"
+                privileged: false
+                disable_entrypoint_overwrite: false
+                oom_kill_disable: false
+                disable_cache: false
+                volumes: ["/cache"]
+                shm_size: 0
+
+This creates a file with the following content:
+
+.. code-block:: toml
+
+    concurrent = 2
+    check_interval = 2
+    [[runners]]
+    name = "gitlab-runner.example.com"
+    url = "https://gitlab.example.com"
+    token = "supersecrettoken"
+    executor = "docker"
+
+    [runners.docker]
+    tls_verify = true
+    image = "fedora:latest"
+    privileged = false
+    disable_entrypoint_overwrite = false
+    oom_kill_disable = false
+    disable_cache = false
+    volumes = [ "/cache",]
+    shm_size = 0
+
+    [session_server]
+    session_timeout = 1800
+
+This also works on ``hostvars``:
+
+.. code-block:: yaml+jinja
+
+    - name: Convert hostvars into toml file
+      ansible.builtin.copy:
+        content: "{{ hostvars['gitlab_runner']['runner_config'] | community.general.to_toml }}"
+        dest: /etc/gitlab-runner/config.toml
+
+.. versionadded: 5.1.0
+
+Converting from TOML
+""""""""""""""""""""
+
+Simliar to the ``to_toml`` filter you can create a dictionary from any TOML-formatted string by using the ``from_toml`` filter:
+
+.. code-block:: yaml+jinja
+
+    - name: Convert TOML-formatted data into dictionary
+      debug:
+        msg: "{{ toml | community.general.from_toml | community.general.json_query('runners[0].token') }}"
+      vars:
+        - toml: |
+            concurrent = 2
+            check_interval = 2
+            [[runners]]
+            name = "gitlab-runner.example.com"
+            url = "https://gitlab.example.com"
+            token = "supersecrettoken"
+            executor = "docker"
+
+            [runners.docker]
+            tls_verify = true
+            image = "fedora:latest"
+            privileged = false
+            disable_entrypoint_overwrite = false
+            oom_kill_disable = false
+            disable_cache = false
+            volumes = [ "/cache",]
+            shm_size = 0
+
+            [session_server]
+            session_timeout = 1800
+
+This produces:
+
+.. code-block:: ansible-output
+
+    TASK [Convert TOML-formatted data into dictionary] ****************************************
+    ok: [localhost] => {
+        "msg": "supersecrettoken"
+    }
+
+This is probably most useful in combination with the :ref:`ansible.builtin.slurp module <ansible.builtin.slurp_module>`, e.g.:
+
+.. code-block:: yaml+jinja
+
+    - name: Get gitlab runner configuration
+      slurp:
+        src: /etc/gitlab-runner/config.toml
+      register: slurped_config
+
+    - name: Convert TOML-formatted data into dictionary
+      debug:
+        msg: "{{ slurped_config['content'] | b64decode | community.general.from_toml | json_query('runners[0].token') }}"
+
+This produces:
+
+.. code-block:: ansible-output
+
+    TASK [Get gitlab runner configuration] ****************************************************
+    ok: [localhost]
+
+    TASK [Convert TOML-formatted data into dictionary] ****************************************
+    ok: [localhost] => {
+        "msg": "supersecrettoken"
+    }
+
+.. versionadded: 5.1.0

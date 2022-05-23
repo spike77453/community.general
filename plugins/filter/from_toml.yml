@@ -1,0 +1,31 @@
+DOCUMENTATION:
+  name: from_toml
+  short_description: Converts TOML-formatted string to dictionary.
+  version_added: 5.1.0
+  description:
+    - Converts a string containing TOML-formatted into a dictionary containing the parsed data.
+  options:
+    _input:
+      description: A string containing TOML-formatted data.
+      type: string
+      required: true
+
+EXAMPLES: |
+  - name: Get current gitlab runner configuration
+    slurp:
+      src: /etc/gitlab-runner/config.toml
+    register: slurped_config
+
+  - set_fact:
+      config: slurped_config['content'] | b64decode | community.general.from_toml
+
+  - name: Access config as regular ansible variable
+    assert:
+      that:
+        - config['runners'][0]['token'] == 'supersecrettoken'
+        - slurped_config['content'] | b64decode | community.general.from_toml | json_query('runners[0].token') == 'supersecrettoken'
+
+RETURN:
+  _value:
+    description: A dictionary containing the parsed data.
+    type: dict
